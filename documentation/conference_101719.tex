@@ -1,0 +1,521 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Predicting Music Track Peak Chart Positions: Enhancing Robustness through a Two-Stage Classifier\\
+}
+
+% https://tex.stackexchange.com/questions/458204/ieeetran-document-class-how-to-align-five-authors-properly/458208#458208
+\makeatletter
+\newcommand{\linebreakand}{%
+  \end{@IEEEauthorhalign}
+  \hfill\mbox{}\par
+  \mbox{}\hfill\begin{@IEEEauthorhalign}
+}
+\makeatother
+
+\author{\IEEEauthorblockN{Beyonce Obazee}
+\IEEEauthorblockA{\textit{Dublin City University} \\
+Dublin, Ireland \\
+beyonce.obazee2@mail.dcu.ie}
+\and
+\IEEEauthorblockN{Darragh McGonigle}
+\IEEEauthorblockA{\textit{Dublin City University} \\
+Dublin, Ireland \\
+darragh.mcgonigle3@mail.dcu.ie}
+\and
+\IEEEauthorblockN{Mark Reid}
+\IEEEauthorblockA{\textit{Dublin City University} \\
+Dublin, Ireland \\
+mark.reid28@mail.dcu.ie}
+\linebreakand
+\IEEEauthorblockN{Mohammadou Boubakary Wadjiri}
+\IEEEauthorblockA{\textit{Dublin City University} \\
+Dublin, Ireland \\
+mohammadou.boubakarywadjiri2@mail.dcu.ie}
+}
+
+\maketitle
+
+\begin{abstract}
+% Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean vel tellus vitae urna dictum sodales. Duis in mollis risus. Nullam ut tortor vitae erat pellentesque molestie eget quis augue. Vestibulum varius vehicula neque, sed placerat odio placerat nec. Morbi id lorem quis mi malesuada auctor at id libero. Donec ut massa ullamcorper, scelerisque velit eget, volutpat orci. Mauris porta interdum mi, nec fringilla velit. Etiam mattis volutpat lectus, vitae congue mauris sodales non. Donec pellentesque ultricies eros, placerat ullamcorper risus tristique ac. Fusce efficitur enim non consequat sollicitudin. Nam ac urna tellus. Aenean ligula sem, pretium nec egestas ut, elementum a odio. Nunc vitae arcu leo. Suspendisse lorem urna, vehicula ac magna sit amet, finibus laoreet mi. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Maecenas feugiat dui urna, sed molestie sem scelerisque a. Morbi accumsan pretium tortor. Nulla nisi orci, sodales in facilisis et, sagittis quis arcu. Curabitur porta cursus volutpat. Nullam nunc tellus, ullamcorper non ante ac, faucibus rutrum leo. Vivamus suscipit turpis quis magna ornare maximus. In ut massa at odio pharetra fringilla sed nec elit. Sed aliquet rutrum risus a egestas. Sed ornare, mauris et pellentesque dictum, enim dolor faucibus nisl, nec dictum libero odio vitae ex. Vivamus libero magna, lacinia ac interdum eget, commodo vitae eros. Vestibulum auctor arcu arcu, nec sollicitudin lorem pretium vitae. Morbi vitae bibendum lacus. Aenean a metus sed neque efficitur fermentum. Aenean at congue purus. Pellentesque mattis diam leo, ut aliquet arcu aliquam nec. Nullam.
+\end{abstract}
+
+\begin{IEEEkeywords}
+machine learning, music, spotify, classification, charts, billboard
+\end{IEEEkeywords}
+
+\section{Introduction}
+Music is a massive industry across the world and it carries not just a high cultural impact but an economic one as well. A report in 2020 from the Recording Industry Association of America (RIAA)\cite{b1} shows that in 2019 revenues from U.S. recorded music totaled \$7.36 billion. This shows a \$2.5 billion increase from 4 years prior. The majority of this growth can be attributed to the continued rise in digital streaming platforms like Spotify, Apple Music, etc.\cite{b2}.
+
+With such large economic incentives at stake, research in the field of hit song prediction aims to create accurate models that can predict songs with a high likelihood of achieving widespread popularity. This has the potential to assist in guiding factors like digital streaming platform (DSP) recommendations, record label marketing spend and the musical direction of artists\cite{b3}\cite{b4}.
+
+Over the years researchers have considered many different facets of this problem, such as, what demographic, socioeconomic and acoustic factors may influence a song's success\cite{b5}.
+Or how to quantify success and the various advantages and disadvantages of different measures\cite{b3}.
+In doing so, researchers have also applied a wide range of machine learning (ML) and deep learning (DL) techniques to the problem in an attempt to maximize predictive performance.
+
+An area that is often ignored in the current research, is the inherent problems with the data itself. Namely, the stark class imbalance between popular and unpopular songs, and the diversity of different tracks that often manifest as outliers in the data. Both of these factors stand to play a huge part in the efficacy of any classifier, and the volume of new music being published on digital streaming platforms (DSP) only serves to  exacerbate these issues.
+
+This work seeks to address these challenges by proposing a novel approach to the prediction of a track's peak rank in the Billboard Hot 100 charts\cite{b6}. By leveraging a two-stage classifier, this research aims to enhance the robustness of predictive models, thereby mitigating the impact of outliers. Additionally, we will explore the effects of data imbalance on a wide range of machine learning models and examine the effectiveness of common balancing techniques when applied to this domain. Through this, we aim to shine a light on what we view as a fundamental challenge to the problem at hand and to help improve the accuracy of models for music popularity prediction going forward.
+
+The paper will be structured as follows. It will begin with an analytical evaluation of existing works in the field, highlighting the current state of the research and identifying gaps. Next, we will then give a detailed look at our methodology and justifications for key decisions. Following this will be an evaluation of our experimental results. Finally, we will wrap up with a conclusion of our thoughts and recommendations for future work.
+
+\section{Related Work}
+The field of hit song prediction is often framed as the prediction of a song's popularity. Though due to the abstract and immeasurable nature of the concept of popularity, much work has been done in defining proxy measurements for a song's success.
+
+This topic is explored in detail in Lee \& Lee's work\cite{b3}, in which they put forward 8 different measures of popularity based on a song's performance in the Billboard Hot 100 charts. They detail the distributions of each of the metrics and explore what it means for songs to perform highly in one metric vs another. They concluded their work by extracting acoustic features from charting songs and training Support Vector Machines (SVM) to perform binary classification on whether or not a song would be above the mean in a given metric. Though their analysis of each metric is well thought out, their use of only one classifier leaves room for doubt as to whether other models could have found better results. Additionally, as they only analyzed charting songs it is hard to know how well their approach would perform on a wider subset of music.
+
+A more generalized approach to popularity measurement can be seen in the work of Shulman et al.\cite{b7}. Their approach involves using social media to track the adoption and spread of various 'items' such as songs, photos and books. Their method involves 'peeking' at an item's performance during its first k weeks and then predicting if the item will have above or below the median social media engagement after n days. Their findings interestingly show that 'temporal' features, such as looking at the early adoption rate, have the highest impact on a model's performance. This is substantiated by Lee \& Lee\cite{b3} who showed that a song's debut chart rank is correlated with its peak chart rank. Additionally, Shulman et al.\cite{b7} also found that these temporal features were the only ones that generalized cross-domain.
+
+Many researchers in hit song prediction have taken similar approaches and looked to social media platforms like Last.FM to create features based on social context. An example of this is the work of Ren \& Kauffman\cite{b5}
+who identified 3 categories of features; music semantics, social context and artist reputation. They also devised two popularity metrics, how long it took from release for a song to reach the charts (Time2TopRank) and the length of time the song remained in the charts (Duration). They attempted to predict Duration using Support Vector Regression, Bagging and Random Forest (RF) with RF performing the best in this task. Following this they go on to state 6 popularity patterns that they observed in their data based on the 2 prior metrics. They went on to test 3 classifier models of which RF performed the best again. This paper does a great job of exploring the diverse range of features that may impact hit song prediction. Furthermore, its evaluation of how Synthetic Minority Oversampling Technique (SMOTE)\cite{b8}
+can help boost the model's performance on under-represented classes is well presented. The major problem we see in this paper is it does not address songs that do not reach the charts as all 6 of its patterns involve charting.
+
+In line with the work of Ren \& Kauffman\cite{b5}, Kim et al.\cite{b9}
+used the number of tweets about a song in Twitter hashtags to predict a song's popularity. To begin with, they trained regression models to predict a song's peak Billboard chart rank. Following this they used an RF to perform binary classification on whether or not a song was a hit based on its peak rank. With 'hit' being defined as being within the top n positions of the chart for varying n values. Like Ren \& Kauffman\cite{b5}; they too account for the class imbalance, but opt for random undersampling. Their definition of 'hit' is arguable as a song that came 11th on the charts would be deemed a non-hit. This definition of 'hit' is also seen in the works, namely, Bischoff et al.\cite{b10} and  Herremans et al.\cite{b11}. The former of which also used social media-derived features, in this case from LastFM. It also used minority undersampling to address the class imbalance and experimented with even narrower ranges for its 'hit' definition, at the most extreme being any charting song that wasn't number 1 was deemed a 'non-hit'. Both Bischoff et al.\cite{b10} and Kim et al.\cite{b9}
+lacked consideration of acoustic features and relied entirely on social media for their feature sets which seems unwise as other papers have shown that acoustic features can aid in the prediction of hit songs\cite{b5}\cite{b11}.
+
+As previously mentioned, Herremans et al.\cite{b11} took the same range-based approach to defining hits as Bischoff et al.\cite{b10} and Kim et al.\cite{b9}. However, in their case, they used entirely acoustic features and a wider range of classifiers to make their predictions. Of note, they did acknowledge an imbalance in their dataset but opted not to correct it. This likely limited the performance of their classifier as demonstrated by Ren \& Kauffman\cite{b5} who, as mentioned, showed an increase in minority class prediction accuracy using SMOTE.
+
+Interiano et al.{\b12} defined popularity as simply having appeared in the Official UK charts. Their work exploring 1/2 a million songs released in the UK between 1985 to 2015, does a great job highlighting trends in successful music across the years. Of note, is the conclusion that adding a feature denoting whether or not the artist has had recent success has a large impact on classification accuracy.
+
+Araujo et al.\cite{b4} also opted to denote popularity as having appeared in the charts, in their case they used Spotify's Global Top 50. They gathered 180 weeks of chart data and used lagged features to build a model that aimed to predict if a song would be on the charts in n days based on acoustic features. Though they achieved good results, their deliberate exclusion of time series models for what is admittedly a time series problem leaves room for doubt as to whether their lagged feature approach is optimal . Additionally, it is not clear how well this model will generalize as it only used songs that had appeared in charts at least once.
+
+A true time-series approach to the problem can be found in the work of Karydis et al.\cite{b13}
+In which they discuss the creation of a broad dataset for music popularity prediction. In it, they utilize a Non-linear Auto Regressive (NAR) model and a Non-linear Auto Regressive with eXternal input (NARX) model to make time-series-based predictions using their proposed dataset. Interestingly given the large size of their feature set they experimented with using Principal Component Analysis (PCA) to reduce the feature set and this increased their accuracy significantly. The paper does a great job of explaining its decision making and its examination of other paper's approaches is very in-depth and insightful.
+
+A different approach to feature selection was employed by Khan et al.\cite{b14} namely filter methods. With this, they were able to reduce their feature set from 13 down to 8 without any loss of predictive performance. However, their broad removal of all outliers and the extremely high results relative to other papers casts doubt on the effectiveness of their approach overall.
+
+Zhang\cite{b15} took a different approach to representing music for machine learning, in their paper on genre classification they used a convolutional neural network (CNN) to classify a track into 1 of 10 genres based on an image of the waveform of a song. This approach was expanded upon by Yang et al.\cite{b16} by utilizing a traditional CNN in combination with JYnet which is a pre-trained music tagging system to predict a song's play counts. This concept of using a CNN to extract features from the song's waveforms is a very unique and modern approach to the problem. However, they only compared the model against Linear Regression, the inclusion of more complex or non-linear models would have helped contextualize the model's performance.
+
+% Crisp-DM Stages (Business Understanding, Data Preperation, Modelling, Evaluaion)
+\section{Methodology}
+
+% Business Understanding
+% Data Understanding
+\subsection{Dataset Sources}
+\subsubsection{Spotify Dataset}
+Spotify is a digital streaming platform launched in 2008, since then they have grown to become the largest subscription-based digital music platform with over 100 million songs and 602 million registered users\cite{b17}. Spotify makes their data on songs public for others to use through APIs. For our research, we will be using data from their track's audio features API\cite{b20} which gives us traditional acoustic features of a song such as tempo, key and time signature, Along with, more advanced acoustic features created using proprietary algorithms like danceability, valence and energy. We will not be making use of the API directly but instead relying on an accumulated dataset of over 1 million different song's acoustic features\cite{b18}.
+
+\subsubsection{BillBoard Hot 100 Dataset}
+The Billboard Hot 100 chart is one of the most popular U.S-based music charts. It has been in operation since August of 1958, publishing the top 100 songs from the past week. To create this list they aggregate data from physical and digital sales, radio play and digital streaming to rank the songs.
+Again, we are not accessing this data directly, but instead, we are using a pre-compiled dataset\cite{b19} that contains chart-related data for each song occurring in each week of the charts such as; what week the song appeared in; how many weeks that song has been in the charts up until that point; and what is the peak rank the song had achieved in the charts up until that point. Additionally, the dataset has Spotify acoustic features for some of the songs, which will be used to help conflate songs and fill in missing songs from the Spotify dataset.
+
+% Data Preperation
+\subsection{Data Preparation}
+\subsubsection{Data Integration}
+
+To create our dataset we started by integrating the Billboard dataset and Spotify dataset. To do this we conflated the two datasets using the "track id" value assigned to each song by Spotify. For instances where this ID was not present in the Billboard dataset, we relied on the artist name and track name to identify the songs in each dataset. If the song was not found in the Spotify dataset but did contain sufficient Spotify data in the Billboard dataset, the song was added to create a more complete dataset.
+
+\subsubsection{Data Cleaning}
+
+Examining the dataset we identified 3 key exclusion criteria for tracks in the dataset. The first was the removal of any track with the genre of 'sleep', as this genre accounted for a large percentage of outliers in the dataset and is comprised of white noise and other sleep aids which for our model are not being considered as songs.
+
+The second was the removal of any song with a tempo of 0 beats per minute (BPM) as this is not a possible tempo value for a song and is most likely just an error in Spotify's tempo estimation algorithm.\cite{b20} We opted not to impute the erroneous tempo values, as tempo affects other acoustic features like danceability. However, its level of influence as well as exactly what features it influences are not known due to the proprietary nature of the algorithms used to create the complex features.
+
+Finally, we removed all songs released after 2020 as this was the last complete year from the Billboard dataset and failing to do so would have led to songs that charted post 2020 being labeled as uncharted which could have a negative impact on model performance.
+
+\subsubsection{Categorical Encoding}
+Within our dataset, we identified 3 categorical features, those being genre, key, and mode. The key was already encoded using integer pitch class notation
+%citation needed
+which we opted to leave unchanged. Mode, which represents whether or not a song is in a major or minor key was a binary value and thus no encoding was needed. This left genre, which contained 81 unique classes. We identified 4 potential encoding strategies and tested each by building a logistic regression model and measuring accuracy, Akaike information criterion (AIC) and Bayesian Information Criterion (BIC). The first method was One-Hot encoding, with this method the logistic regression model failed to converge. We believe this is due to the increase in dimensionality brought on by adding 81 sparse columns. The second method was label encoding, which performed the worst of the tested encoding methods. This is likely because of this method's poor suitability for non-ordinal data, as by nature it implies a category can be greater than another (e.g. rock < jazz) which doesn't make sense in non-ordinal scenarios. The third approach was count encoding, where a portion of data (5\% in this case) is withheld from the test and train dataset and the labels are replaced with the occurrence of each label in the withheld portion of data. Finally, target encoding which is similar to count encoding, in that a portion of the data is withheld. But in this case, the label is replaced with the probability of the target given the label.
+
+Of the tested methods, target encoding performed the best across all tested metrics. The full results can be seen in Table I.
+
+\begin{table}[htbp]
+\caption{Genre Encoding Results}
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Encoding Method}&{\textbf{Accuracy}}&{\textbf{AIC}}&{\textbf{BIC}} \\
+\hline
+One-Hot Encoding & n/a$^{\mathrm{a}}$ & n/a$^{\mathrm{a}}$ & n/a$^{\mathrm{a}}$\\
+Label Encoding & 0.74 & 14089 & 14194\\
+Count Encoding & 0.72 & 13576 & 13680\\
+\textbf{Target Encoding} & \textbf{0.84} & \textbf{9318} & \textbf{9423}\\
+\hline
+\multicolumn{4}{l}{$^{\mathrm{a}}$One-Hot Encoding failed to converge due to singular matrix.}
+\end{tabular}
+\label{tab1}
+\end{center}
+\end{table}
+
+\subsection{Data Analysis}
+
+\subsubsection{Analysis of Distributions}
+By looking a distributions in the data between the subset of songs that have charted and the subset that have not charted, we can get an understanding of the characteristics that may help differentiate songs that reach the charts and those that do not. Figure 1 shows the distributions for 6 acoustic features in the dataset which highlight certain aspects of charting music. For instance, we can see that the subset of charted songs skews higher in terms of 'danceability' and 'valence'  which indicates that they tend to be happier and easier to dance to. These two traits would suggest that charted songs would have a higher 'energy' and that does appear to be true as the 'energy' distribution is skewed further right for charted songs. However, there is a steep drop off for extremely high 'energy' songs (\textgreater0.9) in the charted distribution, despite that being the most represented group in non-charted songs. This illustrates that songs with extreme energy values (\textless0.2 or \textgreater0.9) have a lower representation in the charts.
+
+Another interesting trend can be seen in 'instrumentalness' which in both categories has the vast majority of songs with values below 0.1. However, in the non-charted case, we can a higher representation of the other values especially towards the higher end. This is in stark contrast to charted songs which are composed of almost exclusively songs with below 0.1 'instumentalness' except for a few outliers. This trend can also be seen in 'acousticness' but to a lesser extent.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.16]{Frame 1.png}}
+\caption{Charted verse Non-Charted distributions for acoustic features}
+\label{fig1}
+\end{figure}
+
+\subsubsection{Outliers and Anomalies}
+The dataset contains a large number of outliers, as is to be expected with the diverse range of songs present in the dataset.
+Features like 'duration' and 'liveness' are particularly outlier heavy as one may expect due to Spotify containing a fair number of live performances, movie soundtracks, and short album interludes. Even ignoring these fringe cases, outliers can be seen even among songs that reached the charts. This highlights how diversity will be present in any subset of music and the models used in this domain must account for that fact and must be designed in a way that is robust to outliers.
+% Discuss correlation and multicolinartity
+\subsubsection{Correlation Analysis}
+Looking at correlation in our dataset we see some high correlation between certain features. For instance, 'energy' and 'loudness' are positively correlated with a correlation factor of 0.79. 'Acousticness' has a high negative correlation with both 'energy' and 'loudness' (-0.74 \& -0.61 respectively). Finally, 'danceability' has a positive correlation factor of 0.5 with 'valence'.
+
+To ensure this degree of correlation was not a sign of high multicollinearity in our dataset we calculated the variance inflation factor (VIF) for each feature. We found there were some relatively high VIF scores for 'energy' with 4.68 and 'loudness' with 3.51. However, both were below the 10 limit which would indicate problems. To verify, we trained a logistic regression model with and without each of these values and saw an increase in both AIC and BIC with their exclusion. For these reasons, we opted to keep both of these features in our dataset. 
+
+% Discusss imbalance
+\subsubsection{Data Imbalance}
+Another characteristic of the dataset is the data imbalance, not just between the binary classes of charted and non-charted but also between the peak ranks of charted songs. In the binary case, the ratio is 148 non-charted songs for every charted song. With roughly 1 million non-charted songs and nearly 7000 charted songs.
+
+In terms of peak ranks among charting songs, the most common peak rank is 1st with 203 songs having this value and the least common is 74th with only 45 songs peaking at that rank.
+
+Addressing this imbalance is at the core of this work and is part of the motivation behind the two-stage approach. Instead of having 101 classes with 45 members of the smallest class and a million members of the largest. By breaking the problem into two distinct stages we have a much more manageable balance of 7000 to 1 million and 45 to 203.
+
+Breaking the problem into two stages is still not enough to fully correct for the imbalance so in addition we will be exploring 4 different class balancing techniques.
+
+The first is random undersampling, where a random sample of the majority class is taken equal in size to the the minority class. This is the approach taken in the works of Kim et al.\cite{b9}and Interiano et al.\cite{b12}.
+
+
+The second approach is a variation on random undersampling called near-miss undersampling. With this approach, a sample equal to the number in the minority class is still taken, but the key difference is the data points are not picked at random but instead picked based on their average distance to points in the minority class. This leads to the points most similar to the minority class being selected from the majority class.
+
+The third approach is random oversampling, with this approach random members of the minority class are replicated to increase the size of the minority class. In our case, for the binary classification, it would be too extreme to replicate each member 148 times to achieve balance. So instead, we have opted to use random oversampling in conjunction with random undersampling to double the minority class size and reduce the majority class size to match.
+
+Finally, SMOTE increases the class size of the minority class by creating synthetic data points between the existing class members. In a similar manner to random oversampling, for our purposes, we will be using it in conjunction with random undersampling to avoid over-inflating the minority class size.
+
+% Modelling
+\subsection{Model Architecture}
+The model we are proposing is a novel two-stage classifier, the first stage is a binary classifier that discriminates between charting and non-charting songs and and second is a multi-class classifier that classifies charting songs based on their peak rank achieved in the Billboard charts. See Figure 2.
+
+We hypothesize that with this approach we will have two key advantages over a traditional single-stage classifier. This first, as mentioned previously, is it helps with class balance by considering all charted songs as one class for the first stage. This will still be an imbalanced problem, but far less than if we were considering the full 101 different classes at once. The second advantage of this approach is robustness, as the dataset contains a lot of noise, by employing a robust binary classifier to filter out non-charting data, our multi-class classifier can concern itself solely with the less noisy charted data. This should hopefully lead to more accurate predictions overall.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.20]{Frame 5.png}}
+\caption{High level two-stage model overview}
+\label{fig2}
+\end{figure}
+
+\subsubsection{Binary Classifier}
+For our binary classifier, we will experiment with 6 different models, Logistic Regression (Logit), Support Vector Machine (SVM), Random Forest (RF), eXtreme Gradient Boosting (XGBoost), Voting Ensemble and Stacking Ensemble. Both ensemble models will use Logit, Random Forest and XGBoost as base classifiers, as this was the optimal combination found through our testing. The voting classifier takes the output of the base models and selects a final output using a soft voting strategy that accounts for each model's predicted probability. The stacking classifier is similar, but instead of voting, the base models' output is passed to a final estimator (Logit in our case) which makes the final classification. See Figure 3.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.20]{Frame 7.png}}
+\caption{Stacking Ensemble Binary Classifier}
+\label{fig3}
+\end{figure}
+
+In addition, each model will be tested using 5 different data balancing techniques, random undersampling, near-miss undersampling, random oversampling and SMOTE. As mentioned previously in the data imbalance section, both oversampling techniques will be used to double the minority class size and then random undersampling will reduce the majority class to match the newly enlarged minority class. Other ratios of synthetic/replicated data in the minority class were explored but 1:1 proved the most effective. 
+
+\subsubsection{Ranking Classifier}
+
+\section{Evaluation}
+\subsection{Binary Classifier}
+For the evaluation of the 6 different binary class models, it was important that we first tuned each of their hyperparameters.
+
+For Logit and SVM this tuning was done manually using 10-fold cross-validation with random undersampling to test each model's accuracy.
+With Logit we experimented with varying the solvers and penalties but found many combinations failed to converge. Ultimately, we found the Newton-Cholesky solver with l2 penalties to be the best-performing and most consistent setup. Similarly, for SVM we experimented with varying kernel types and found a linear kernel with l2 penalty to be the best-performing parameters.
+
+Due to Random Forest and XGBoost having more complex parameters, we opted to use GridSearchCV to explore different combinations of hyperparameters. For Random Forest we explored different numbers of estimators, max depth, minimum sample splits and max features. When tuning XGBoost we explored different numbers of estimators, max depth and learning rates. Both models showed a marginal increase in performance when using the tuned hyperparameters.
+
+For the voting and stacking ensembles, we used the optimal hyperparameters found in the previous sections for each of the base models. Initially, we tried a 'hard' voting strategy with the voting ensemble and all 4 base models. We explored different base model compositions and found that dropping SVM had no negative effect on the model's performance. Additionally, we saw a slight performance increase using a soft voting strategy where the predicted probabilities are weighted into the voting step. The stacking ensemble was configured similarly, again SVM proved to not be beneficial to the model's performance. Additionally, we found no significant difference in performance across different final estimator models. We ultimately used Logit for the final estimator as it was less complex than the other 3 and offered the same performance.
+
+Our evaluation was done using 10-fold cross-validation, we performed this 3 times for each model-balancing method pairing and then averaged out the results. These results can be seen in Table II \& Table III.
+
+\begin{table}[htbp]
+\caption{Binary Classification Accuracy}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Model}&{\textbf{RU$^{\mathrm{a}}$}}&{\textbf{NMU$^{\mathrm{b}}$}}&{\textbf{RO$^{\mathrm{c}}$}}&{\textbf{SMOTE}} \\
+\hline
+\textbf{Logit} & 0.84 & 0.79 & 0.85 & 0.87\\
+\textbf{SVM} & 0.84 & 0.83 & 0.84 & 0.86\\
+\textbf{RF} & 0.89 & 0.85 & 0.89 & 0.91\\
+\textbf{XGBoost} & 0.89 & 0.86 & 0.89 & 0.90\\
+\textbf{Voting} & 0.89 & 0.86 & 0.89 & 0.91\\
+\textbf{Stacking} & 0.89 & 0.86 & 0.87 & 0.91\\
+\hline
+\multicolumn{4}{l}{$^{\mathrm{a}}$Random Undersampling}\\
+\multicolumn{4}{l}{$^{\mathrm{b}}$Near-Miss Undersampling}\\
+\multicolumn{4}{l}{$^{\mathrm{b}}$Random Oversampling}\\
+\end{tabular}
+
+\label{tab2}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Binary Classification F1 Score}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Model}&\multicolumn{2}{|c|}{\textbf{RU$^{\mathrm{a}}$}}&\multicolumn{2}{|c|}{\textbf{NMU$^{\mathrm{b}}$}}&\multicolumn{2}{|c|}{\textbf{RO$^{\mathrm{c}}$}}&\multicolumn{2}{|c|}{\textbf{SMOTE}} \\
+\hline
+ Class & \textbf{1} & \textbf{0} & \textbf{1} & \textbf{0} & \textbf{1} & \textbf{0} & \textbf{1} & \textbf{0}\\
+ \hline
+\textbf{Logit} & 0.83 & 0.85 & 0.80 & 0.79 & 0.84 & 0.86 & 0.86 & 0.88\\
+\textbf{SVM} & 0.82 & 0.85 & 0.83 & 0.82 & 0.82 & 0.85 & 0.85 & 0.87\\
+\textbf{RF} & 0.89 & 0.89 & 0.86 & 0.83 & 0.89 & 0.89 & 0.91 & 0.91\\
+\textbf{XGBoost} & 0.90 & 0.89 & 0.87 & 0.85 & 0.89 & 0.89 & 0.91 & 0.91\\
+\textbf{Voting} & 0.89 & 0.89 & 0.87 & 0.86 & 0.89 & 0.89 & 0.91 & 0.91\\
+\textbf{Stacking} & 0.89 & 0.89 & 0.87 & 0.85 & 0.87 & 0.88 & 0.91 & 0.91\\
+\hline
+\multicolumn{9}{l}{$^{\mathrm{a}}$Random Undersampling}\\
+\multicolumn{9}{l}{$^{\mathrm{b}}$Near-Miss Undersampling}\\
+\multicolumn{9}{l}{$^{\mathrm{b}}$Random Oversampling}\\
+\end{tabular}
+
+\label{tab3}
+\end{center}
+\end{table}
+
+Our testing shows a clear divide with XGBoost, Random Forest, Voting Ensemble and Stacking Ensemble performing significantly better than Logistic Regression and SVM. However, among these 4 models there does not appear to be a significant difference in performance as each performed nearly identically across all of the tested balancing methods.
+
+As for balancing methods, we opted to exclude the imbalanced dataset testing results from both tables as the results were identical across all models. Every model learned to solely predict the majority class leading to 0.99 accuracy and 0 F1-score for the positive class (Charted) and 1 F1-score for the negative class (Non-Charted). Between the remaining 4 balancing strategies SMOTE proved to be significantly better than the others, as it had the highest accuracy for every model.
+
+From this, we have opted to use Random Forest and SMOTE as our first stage classifier. Random Forest tied for the highest accuracy with Voting Ensemble and Stacking Ensemble. However, as Random Forest was used as a base classifier in both approaches, by using the standalone model as opposed to the ensembles we reduce the complexity of our model while still maintaining optimal performance.
+% Run Ztest to check signficance.
+
+\subsection{Ranking Classifier}
+\subsection{Overall Evaluation}
+% 80:20 Split
+% Test using 2000 - 2016 as training data then use 2017 - 2020 as testing data to test predictive power.
+
+\section{Conclusion and Future Work}
+
+% \section{Latex IEEE Advice}
+
+% \subsection{Maintaining the Integrity of the Specifications}
+
+% The IEEEtran class file is used to format your paper and style the text. All margins, 
+% column widths, line spaces, and text fonts are prescribed; please do not 
+% alter them. You may note peculiarities. For example, the head margin
+% measures proportionately more than is customary. This measurement 
+% and others are deliberate, using specifications that anticipate your paper 
+% as one part of the entire proceedings, and not as an independent document. 
+% Please do not revise any of the current designations.
+
+% \section{Prepare Your Paper Before Styling}
+% Before you begin to format your paper, first write and save the content as a 
+% formatting. Please note sections \ref{AA}--\ref{SCM} below for more information on 
+% proofreading, spelling and grammar.
+
+% Keep your text and graphic files separate until after the text has been 
+% formatted and styled. Do not number text heads---{\LaTeX} will do that 
+% for you.
+
+% \subsection{Abbreviations and Acronyms}\label{AA}
+% Define abbreviations and acronyms the first time they are used in the text, 
+% even after they have been defined in the abstract. Abbreviations such as 
+% IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
+% abbreviations in the title or heads unless they are unavoidable.
+
+% \subsection{Units}
+% \begin{itemize}
+% \item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
+% \item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
+% \item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}'' or ``webers per square meter'', not ``webers/m\textsuperscript{2}''. Spell out units when they appear in text: ``. . . a few henries'', not ``. . . a few H''.
+% \item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
+% \end{itemize}
+
+% \subsection{Equations}
+% Number equations consecutively. To make your 
+% equations more compact, you may use the solidus (~/~), the exp function, or 
+% appropriate exponents. Italicize Roman symbols for quantities and variables, 
+% but not Greek symbols. Use a long dash rather than a hyphen for a minus 
+% sign. Punctuate equations with commas or periods when they are part of a 
+% sentence, as in:
+% \begin{equation}
+% a+b=\gamma\label{eq}
+% \end{equation}
+
+% Be sure that the 
+% symbols in your equation have been defined before or immediately following 
+% the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
+% the beginning of a sentence: ``Equation \eqref{eq} is . . .''
+
+% \subsection{\LaTeX-Specific Advice}
+
+% Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
+% of ``hard'' references (e.g., \verb|(1)|). That will make it possible
+% to combine sections, add equations, or change the order of figures or
+% citations without having to go through the file line by line.
+
+% Please don't use the \verb|{eqnarray}| equation environment. Use
+% \verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
+% environment leaves unsightly spaces around relation symbols.
+
+% Please note that the \verb|{subequations}| environment in {\LaTeX}
+% will increment the main equation counter even when there are no
+% equation numbers displayed. If you forget that, you might write an
+% article in which the equation numbers skip from (17) to (20), causing
+% the copy editors to wonder if you've discovered a new method of
+% counting.
+
+% {\BibTeX} does not work by magic. It doesn't get the bibliographic
+% data from thin air but from .bib files. If you use {\BibTeX} to produce a
+% bibliography you must send the .bib files. 
+
+% {\LaTeX} can't read your mind. If you assign the same label to a
+% subsubsection and a table, you might find that Table I has been cross
+% referenced as Table IV-B3. 
+
+% {\LaTeX} does not have precognitive abilities. If you put a
+% \verb|\label| command before the command that updates the counter it's
+% supposed to be using, the label will pick up the last counter to be
+% cross referenced instead. In particular, a \verb|\label| command
+% should not go before the caption of a figure or a table.
+
+% Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
+% will not stop equation numbers inside \verb|{array}| (there won't be
+% any anyway) and it might stop a wanted equation number in the
+% surrounding equation.
+
+% \subsection{Some Common Mistakes}\label{SCM}
+% \begin{itemize}
+% \item The word ``data'' is plural, not singular.
+% \item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
+% \item In American English, commas, semicolons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
+% \item A graph within a graph is an ``inset'', not an ``insert''. The word alternatively is preferred to the word ``alternately'' (unless you really mean something that alternates).
+% \item Do not use the word ``essentially'' to mean ``approximately'' or ``effectively''.
+% \item In your paper title, if the words ``that uses'' can accurately replace the word ``using'', capitalize the ``u''; if not, keep using lower-cased.
+% \item Be aware of the different meanings of the homophones ``affect'' and ``effect'', ``complement'' and ``compliment'', ``discreet'' and ``discrete'', ``principal'' and ``principle''.
+% \item Do not confuse ``imply'' and ``infer''.
+% \item The prefix ``non'' is not a word; it should be joined to the word it modifies, usually without a hyphen.
+% \item There is no period after the ``et'' in the Latin abbreviation ``et al.''.
+% \item The abbreviation ``i.e.'' means ``that is'', and the abbreviation ``e.g.'' means ``for example''.
+% \end{itemize}
+% An excellent style manual for science writers is \cite{b7}.
+
+% \subsection{Authors and Affiliations}
+% \textbf{The class file is designed for, but not limited to, six authors.} A 
+% minimum of one author is required for all conference articles. Author names 
+% should be listed starting from left to right and then moving down to the 
+% next line. This is the author sequence that will be used in future citations 
+% and by indexing services. Names should not be listed in columns nor group by 
+% affiliation. Please keep your affiliations as succinct as possible (for 
+% example, do not differentiate among departments of the same organization).
+
+% \subsection{Identify the Headings}
+% Headings, or heads, are organizational devices that guide the reader through 
+% your paper. There are two types: component heads and text heads.
+
+% Component heads identify the different components of your paper and are not 
+% topically subordinate to each other. Examples include Acknowledgments and 
+% References and, for these, the correct style to use is ``Heading 5''. Use 
+% ``figure caption'' for your Figure captions, and ``table head'' for your 
+% table title. Run-in heads, such as ``Abstract'', will require you to apply a 
+% style (in this case, italic) in addition to the style provided by the drop 
+% down menu to differentiate the head from the text.
+
+% Text heads organize the topics on a relational, hierarchical basis. For 
+% example, the paper title is the primary text head because all subsequent 
+% material relates and elaborates on this one topic. If there are two or more 
+% sub-topics, the next level head (uppercase Roman numerals) should be used 
+% and, conversely, if there are not at least two sub-topics, then no subheads 
+% should be introduced.
+
+% \subsection{Figures and Tables}
+% \paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
+% bottom of columns. Avoid placing them in the middle of columns. Large 
+% figures and tables may span across both columns. Figure captions should be 
+% below the figures; table heads should appear above the tables. Insert 
+% figures and tables after they are cited in the text. Use the abbreviation 
+% ``Fig.~\ref{fig}'', even at the beginning of a sentence.
+
+% \begin{table}[htbp]
+% \caption{Table Type Styles}
+% \begin{center}
+% \begin{tabular}{|c|c|c|c|}
+% \hline
+% \textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
+% \cline{2-4} 
+% \textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
+% \hline
+% copy& More table copy$^{\mathrm{a}}$& &  \\
+% \hline
+% \multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
+% \end{tabular}
+% \label{tabtest}
+% \end{center}
+% \end{table}
+
+% \begin{figure}[htbp]
+% \centerline{\includegraphics{fig1.png}}
+% \caption{Example of a figure caption.}
+% \label{figtest}
+% \end{figure}
+
+% Figure Labels: Use 8 point Times New Roman for Figure labels. Use words 
+% rather than symbols or abbreviations when writing Figure axis labels to 
+% avoid confusing the reader. As an example, write the quantity 
+% ``Magnetization'', or ``Magnetization, M'', not just ``M''. If including 
+% units in the label, present them within parentheses. Do not label axes only 
+% with units. In the example, write ``Magnetization (A/m)'' or ``Magnetization 
+% \{A[m(1)]\}'', not just ``A/m''. Do not label axes with a ratio of 
+% quantities and units. For example, write ``Temperature (K)'', not 
+% ``Temperature/K''.
+
+% \section*{Acknowledgment}
+
+% The preferred spelling of the word ``acknowledgment'' in America is without 
+% an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
+% G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
+% acknowledgments in the unnumbered footnote on the first page.
+
+% \section*{References}
+
+% Please number citations consecutively within brackets \cite{b1}. The 
+% sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
+% number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
+% the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+
+% Number footnotes separately in superscripts. Place the actual footnote at 
+% the bottom of the column in which it was cited. Do not put footnotes in the 
+% abstract or reference list. Use letters for table footnotes.
+
+% Unless there are six authors or more give all authors' names; do not use 
+% ``et al.''. Papers that have not been published, even if they have been 
+% submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
+% that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
+% Capitalize only the first word in a paper title, except for proper nouns and 
+% element symbols.
+
+% For papers published in translation journals, please give the English 
+% citation first, followed by the original foreign-language citation \cite{b6}.
+
+\begin{thebibliography}{00}
+\bibitem{b1} R. Stoner and J. Dutra, Recording Industry Association of America (RIAA), Washington, D.C., 2020, pp.10.
+\bibitem{b2} “U.S. Music Revenue Database,” RIAA, https://www.riaa.com/u-s-sales-database/. 
+\bibitem{b3} J. Lee and J.-S. Lee, “Music popularity: Metrics, characteristics, and audio-based prediction,” IEEE Transactions on Multimedia, vol. 20, no. 11, pp. 3173–3182, Mar. 2018. doi:10.1109/tmm.2018.2820903 
+\bibitem{b4} C. V. Soares Araujo, M. A. Pinheiro de Cristo, and R. Giusti, “Predicting music popularity using music charts,” 2019 18th IEEE International Conference On Machine Learning And Applications (ICMLA), Dec. 2019. doi:10.1109/icmla.2019.00149 
+\bibitem{b5} J. Ren and R. J. Kauffman, “25th European Conference on Information Systems ECIS,” in Understanding music track popularity in a social network, 2017, pp. 374–388 
+\bibitem{b6} “Billboard hot 100,” Billboard, https://www.billboard.com/charts/hot-100/. 
+\bibitem{b7} B. Shulman, A. Sharma, and D. Cosley, “Predictability of popularity: Gaps between prediction and understanding,” Proceedings of the International AAAI Conference on Web and Social Media, vol. 10, no. 1, pp. 348–357, Aug. 2021. doi:10.1609/icwsm.v10i1.14748
+\bibitem{b8} N. V. Chawla, K. W. Bowyer, L. O. Hall, and W. P. Kegelmeyer, “Smote: Synthetic minority over-sampling technique,” Journal of Artificial Intelligence Research, vol. 16, pp. 321–357, Jun. 2002. doi:10.1613/jair.953 
+\bibitem{b9} Y. Kim, B. Suh, and K. Lee, “\#nowplaying the future Billboard,” Proceedings of the first international workshop on Social media retrieval and analysis, Jul. 2014. doi:10.1145/2632188.2632206  
+\bibitem{b10} K. Bischoff, C. S. Firan, M. Georgescu, W. Nejdl, and R. Paiu, “Social knowledge-driven music hit prediction,” Advanced Data Mining and Applications, pp. 43–54, 2009. doi:10.1007/978-3-642-03348-3\_8  
+\bibitem{b11} D. Herremans, D. Martens, and K. Sörensen, “Dance hit song prediction,” Journal of New Music Research, vol. 43, no. 3, pp. 291–302, Jul. 2014. doi:10.1080/09298215.2014.881888  
+\bibitem{b12} M. Interiano et al., “Musical trends and predictability of success in contemporary songs in and out of the top charts,” Royal Society Open Science, vol. 5, no. 5, p. 171274, May 2018. doi:10.1098/rsos.171274 
+\bibitem{b13} I. Karydis, A. Gkiokas, V. Katsouros, and L. Iliadis, “Musical Track Popularity Mining Dataset: Extension \& Experimentation,” Neurocomputing, vol. 280, pp. 76–85, Mar. 2018. doi:10.1016/j.neucom.2017.09.100  
+\bibitem{b14} F. Khan et al., “Effect of feature selection on the accuracy of music popularity classification using machine learning algorithms,” Electronics, vol. 11, no. 21, p. 3518, Oct. 2022. doi:10.3390/electronics11213518  
+\bibitem{b15} J. Zhang, “Music feature extraction and classification algorithm based on Deep Learning,” Scientific Programming, vol. 2021, pp. 1–9, May 2021. doi:10.1155/2021/1651560  
+\bibitem{b16} L.-C. Yang, S.-Y. Chou, J.-Y. Liu, Y.-H. Yang, and Y.-A. Chen, “Revisiting the problem of audio-based hit song prediction using Convolutional Neural Networks,” 2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), Mar. 2017. doi:10.1109/icassp.2017.7952230
+\bibitem{b17} “About Spotify,” Spotify, https://newsroom.spotify.com/company-info/. 
+\bibitem{b18} A. Joshi, “Spotify\_1million\_tracks,” Kaggle, https://www.kaggle.com/datasets/amitanshjoshi/spotify-1million-tracks. 
+\bibitem{b19} “Billboard Hot Weekly Charts,” Kaggle, https://www.kaggle.com/datasets/thedevastator/billboard-hot-100-audio-features. 
+\bibitem{b20} “Get track’s audio features,” Web API Reference | Spotify for Developers, https://developer.spotify.com/documentation/web-api/reference/get-audio-features.
+
+\end{thebibliography}
+% \vspace{12pt}
+% \color{red}
+% IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.
+
+\end{document}
